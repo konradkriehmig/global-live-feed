@@ -1,22 +1,9 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
 resource "azurerm_kubernetes_cluster" "main" {
   name                = "aks-globallivefeed-prod-westeu"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  dns_prefix          = "aks-globallivefeed-prod-westeu"
-  kubernetes_version  = "1.29"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  dns_prefix          = "aks-globallivefeed-prod-westeu-dns"
+  kubernetes_version  = "1.34.7"
 
   default_node_pool {
     name                = "agentpool"
@@ -25,6 +12,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     min_count           = 2
     max_count           = 5
     enable_auto_scaling = true
+    max_pods            = 110
   }
 
   identity {
@@ -32,9 +20,18 @@ resource "azurerm_kubernetes_cluster" "main" {
   }
 
   network_profile {
-    network_plugin    = "azure"
-    load_balancer_sku = "standard"
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    network_policy      = "cilium"
+    network_data_plane  = "cilium"
+    load_balancer_sku   = "standard"
   }
+
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
+
+  image_cleaner_enabled        = true
+  image_cleaner_interval_hours = 168
 }
 
 resource "azurerm_kubernetes_cluster_node_pool" "user" {
@@ -46,12 +43,13 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   min_count             = 2
   max_count             = 100
   enable_auto_scaling   = true
+  max_pods              = 110
 }
 
 resource "azurerm_container_registry" "main" {
   name                = "acrgloballivefeed"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
   sku                 = "Standard"
   admin_enabled       = false
 }
