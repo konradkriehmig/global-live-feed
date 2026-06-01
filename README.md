@@ -1,3 +1,9 @@
+#### Architecture
+
+![alt text](image.png)
+
+#### Setup guide
+
 1. Deploy infra
 
 In Azure: 
