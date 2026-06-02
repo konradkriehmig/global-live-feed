@@ -1,30 +1,37 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: kafka
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  replicas: 3
+  roles:
+    - broker
+    - controller
+  storage:
+    type: persistent-claim
+    size: 10Gi
+    deleteClaim: false
+---
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: kafka
   namespace: kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
-    version: 3.9.0
-    replicas: 3
+    version: 4.2.0
+    metadataVersion: 4.2-IV0
     listeners:
       - name: plain
         port: 9092
         type: internal
         tls: false
-    storage:
-      type: jbod
-      volumes:
-        - id: 0
-          type: persistent-claim
-          size: 10Gi
-          deleteClaim: false
-  zookeeper:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 10Gi
-      deleteClaim: false
   entityOperator:
     topicOperator: {}
     userOperator: {}
