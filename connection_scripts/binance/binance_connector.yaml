@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: binance-connector
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: binance-connector
+  template:
+    metadata:
+      labels:
+        app: binance-connector
+    spec:
+      containers:
+        - name: binance-connector
+          image: acrgloballivefeed.azurecr.io/binance-connector:latest
+          env:
+            - name: KAFKA_BROKER
+              value: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
