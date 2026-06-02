@@ -190,12 +190,15 @@ export default function App() {
 
   useEffect(() => {
     const ws = new WebSocket("ws://20.31.207.45/ws/trades");
-    ws.onmessage = (event) => {
-      const trade = JSON.parse(event.data);
-      setTrades(prev => [trade, ...prev].slice(0, 60));
-      setPrices(prev => ({ ...prev, [trade.symbol]: trade }));
-      setTime(new Date());
-    };
+  ws.onmessage = (event) => {
+    const trade = JSON.parse(event.data);
+    if (trade.type === "ping") return;
+    trade.price = parseFloat(trade.price);
+    trade.change = parseFloat(trade.change || 0);
+    setTrades(prev => [trade, ...prev].slice(0, 60));
+    setPrices(prev => ({ ...prev, [trade.symbol]: trade }));
+    setTime(new Date());
+  };
     return () => ws.close();
   }, []);
 

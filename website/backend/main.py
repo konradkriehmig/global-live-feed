@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 from confluent_kafka import Consumer, KafkaError
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -22,15 +23,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+executor = ThreadPoolExecutor(max_workers=10)
 
-def create_consumer() -> Consumer:
-    return Consumer(
-        {
-            "bootstrap.servers": KAFKA_BROKER,
-            "group.id": "fastapi-websocket",
-            "auto.offset.reset": "latest",
-        }
-    )
+
+def poll_kafka(consumer):
+    return consumer.poll(timeout=0.5)
 
 
 @app.websocket("/ws/trades")
@@ -38,16 +35,23 @@ async def trades_websocket(websocket: WebSocket):
     await websocket.accept()
     log.info("WebSocket client connected")
 
-    consumer = create_consumer()
+    consumer = Consumer({
+        "bootstrap.servers": KAFKA_BROKER,
+        "group.id": f"fastapi-ws-{id(websocket)}",
+        "auto.offset.reset": "latest",
+    })
     consumer.subscribe([KAFKA_TOPIC])
+
+    loop = asyncio.get_event_loop()
 
     try:
         while True:
-            msg = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: consumer.poll(timeout=1.0)
-            )
+            msg = await loop.run_in_executor(executor, poll_kafka, consumer)
+
             if msg is None:
+                await websocket.send_json({"type": "ping"})
                 continue
+
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:
                     continue
@@ -59,6 +63,8 @@ async def trades_websocket(websocket: WebSocket):
 
     except WebSocketDisconnect:
         log.info("WebSocket client disconnected")
+    except Exception as e:
+        log.error(f"Error: {e}")
     finally:
         consumer.close()
 
