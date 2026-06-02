@@ -189,13 +189,14 @@ export default function App() {
   const mapH = window.innerHeight;
 
   useEffect(() => {
-    const iv = setInterval(() => {
-      const t = generateTrade();
-      setTrades(prev => [t, ...prev].slice(0, 60));
-      setPrices(prev => ({ ...prev, [t.symbol]: t }));
+    const ws = new WebSocket("ws://20.31.207.45/ws/trades");
+    ws.onmessage = (event) => {
+      const trade = JSON.parse(event.data);
+      setTrades(prev => [trade, ...prev].slice(0, 60));
+      setPrices(prev => ({ ...prev, [trade.symbol]: trade }));
       setTime(new Date());
-    }, 100);
-    return () => clearInterval(iv);
+    };
+    return () => ws.close();
   }, []);
 
   return (
