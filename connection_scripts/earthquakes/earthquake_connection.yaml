@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: earthquake-connection
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: earthquake-connection
+  template:
+    metadata:
+      labels:
+        app: earthquake-connection
+    spec:
+      containers:
+        - name: earthquake-connection
+          image: acrgloballivefeed.azurecr.io/earthquake_connection:latest
+          env:
+            - name: KAFKA_BROKER
+              value: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
