@@ -6,129 +6,12 @@ const SYMBOLS = [
   "MATIC","UNI","ATOM","LTC","BCH","NEAR","APT","ARB","OP","INJ"
 ];
 
-const BASE_PRICES = {
-  BTC:67000,ETH:3500,BNB:580,SOL:140,XRP:0.52,ADA:0.45,DOGE:0.12,
-  AVAX:35,DOT:7,LINK:18,MATIC:0.8,UNI:10,ATOM:9,LTC:85,BCH:450,
-  NEAR:6,APT:8,ARB:1.1,OP:2.1,INJ:25
-};
 
-function getThreatLevel(mag) {
-  if (mag >= 7) return { label: "CRITICAL", color: "#ff2020", blink: true };
-  if (mag >= 5) return { label: "HIGH", color: "#ff6a00" };
-  if (mag >= 3) return { label: "MODERATE", color: "#ffcc00" };
-  return { label: "LOW", color: "#00ff88" };
-}
-
-function SeismicWaveform({ earthquakes }) {
-  const canvasRef = useRef(null);
-  const dataRef = useRef(Array.from({ length: 300 }, () => 0));
-  const impactRef = useRef(0);
-
-  useEffect(() => {
-    if (earthquakes.length > 0) {
-      impactRef.current = Math.min(40, (earthquakes[0].magnitude || 1) * 6);
-    }
-  }, [earthquakes]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let frame;
-    const draw = () => {
-      const noise = (Math.random() - 0.5) * 4;
-      const impact = impactRef.current > 0 ? (Math.random() - 0.5) * impactRef.current : 0;
-      impactRef.current *= 0.96;
-      dataRef.current.push(noise + impact + Math.sin(Date.now() / 200) * 2);
-      dataRef.current.shift();
-
-      ctx.fillStyle = "rgba(0,0,0,0.1)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      ctx.strokeStyle = "#00ff88";
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = "#00ff88";
-      ctx.shadowBlur = 4;
-      const mid = canvas.height / 2;
-      dataRef.current.forEach((v, i) => {
-        const x = (i / dataRef.current.length) * canvas.width;
-        const y = mid - v;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // Draw center line
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(0,255,136,0.15)";
-      ctx.lineWidth = 0.5;
-      ctx.moveTo(0, mid);
-      ctx.lineTo(canvas.width, mid);
-      ctx.stroke();
-
-      frame = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  return <canvas ref={canvasRef} width={400} height={60} style={{ width: "100%", height: "60px", border: "1px solid rgba(0,255,136,0.15)" }} />;
-}
-
-function RadarSweep() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let angle = 0;
-    let frame;
-    const draw = () => {
-      ctx.fillStyle = "rgba(0,0,0,0.05)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-      const r = Math.min(cx, cy) - 4;
-
-      // Concentric circles
-      ctx.strokeStyle = "rgba(0,255,136,0.12)";
-      ctx.lineWidth = 0.5;
-      for (let i = 1; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // Cross lines
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
-      ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
-      ctx.stroke();
-
-      // Sweep
-      const grad = ctx.createConicalGradient ? null : null;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r, angle, angle + 0.5);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(0,255,136,0.15)";
-      ctx.fill();
-
-      // Sweep line
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
-      ctx.strokeStyle = "rgba(0,255,136,0.8)";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      angle += 0.03;
-      frame = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  return <canvas ref={canvasRef} width={120} height={120} style={{ width: "120px", height: "120px" }} />;
+function getMagColor(mag) {
+  if (mag >= 7) return "#ff2020";
+  if (mag >= 5) return "#ff6a00";
+  if (mag >= 3) return "#ffcc00";
+  return "rgba(255,255,255,0.4)";
 }
 
 function latLngToVec3(lat, lng, r) {
@@ -366,7 +249,7 @@ export default function App() {
   const [prices, setPrices] = useState({});
   const [earthquakes, setEarthquakes] = useState([]);
   const [time, setTime] = useState(new Date());
-  const mapW = window.innerWidth - 320;
+  const mapW = window.innerWidth - 640;
   const mapH = window.innerHeight;
 
   // Binance WebSocket
@@ -390,7 +273,7 @@ export default function App() {
     ws.onmessage = (event) => {
       const eq = JSON.parse(event.data);
       if (eq.type === "ping") return;
-      setEarthquakes(prev => [eq, ...prev].slice(0, 20));
+      setEarthquakes(prev => [eq, ...prev].slice(0, 60));
     };
     return () => ws.close();
   }, []);
@@ -406,6 +289,65 @@ export default function App() {
         background:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px)"
       }}/>
 
+      {/* Earthquake panel - left */}
+      <div style={{
+        width:320, height:"100vh", display:"flex", flexDirection:"column",
+        background:"rgba(8,8,8,0.95)", borderRight:"1px solid rgba(255,255,255,0.08)",
+        backdropFilter:"blur(20px)"
+      }}>
+        <div style={{
+          padding:"18px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)",
+          display:"flex", justifyContent:"space-between", alignItems:"center"
+        }}>
+          <div>
+            <div style={{ color:"rgba(255,255,255,0.3)", fontSize:8, letterSpacing:4 }}>SEISMIC INTELLIGENCE</div>
+            <div style={{ color:"rgba(255,255,255,0.9)", fontSize:12, letterSpacing:3, marginTop:3 }}>EARTHQUAKE — LIVE</div>
+          </div>
+          <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+            <div style={{ width:6, height:6, borderRadius:"50%", background:"#fff", opacity:0.9 }}/>
+            <span style={{ color:"rgba(255,255,255,0.3)", fontSize:8, letterSpacing:2 }}>LIVE</span>
+          </div>
+        </div>
+
+        <div style={{ flex:1, overflow:"hidden", padding:"14px 16px" }}>
+          <div style={{ color:"rgba(255,255,255,0.25)", fontSize:8, letterSpacing:3, marginBottom:10 }}>EVENT STREAM</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:1, overflow:"hidden", height:"calc(100% - 28px)" }}>
+            {earthquakes.slice(0, 40).map((eq, i) => {
+              const mag = eq.magnitude || 0;
+              const color = getMagColor(mag);
+              return (
+                <div key={`${eq.place}-${i}`} style={{
+                  display:"flex", justifyContent:"space-between", alignItems:"center",
+                  padding:"3px 8px",
+                  borderLeft:`2px solid ${color}`,
+                  opacity: Math.max(0.1, 1 - i * 0.022),
+                }}>
+                  <span style={{ color:"rgba(255,255,255,0.55)", fontSize:9, flex:1, overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis", marginRight:8 }}>
+                    {eq.place || "UNKNOWN"}
+                  </span>
+                  <span style={{ color, fontSize:10, fontWeight:"bold", whiteSpace:"nowrap" }}>
+                    M{mag.toFixed(1)}
+                  </span>
+                </div>
+              );
+            })}
+            {earthquakes.length === 0 && (
+              <div style={{ color:"rgba(255,255,255,0.2)", fontSize:9, fontStyle:"italic", marginTop:4 }}>
+                Awaiting events...
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{
+          padding:"10px 20px", borderTop:"1px solid rgba(255,255,255,0.06)",
+          display:"flex", justifyContent:"space-between"
+        }}>
+          <span style={{ color:"rgba(255,255,255,0.2)", fontSize:8, letterSpacing:2 }}>USGS STREAM</span>
+          <span style={{ color:"rgba(255,255,255,0.4)", fontSize:8, letterSpacing:2 }}>{earthquakes.length} EVENTS</span>
+        </div>
+      </div>
+
       <div style={{ flex:1, position:"relative", overflow:"hidden" }}>
         <Globe width={mapW} height={mapH} earthquakes={earthquakes} />
 
@@ -416,115 +358,6 @@ export default function App() {
         }}>
           <div style={{ color:"rgba(255,255,255,0.3)", fontSize:8, letterSpacing:4, marginBottom:6 }}>SIGNAL / ACTIVITY</div>
           <SignalLine />
-        </div>
-
-        {/* Seismic Operations Panel - bottom left */}
-        <div style={{
-          position:"absolute", bottom:24, left:24, width:360,
-          background:"rgba(0,8,2,0.88)", border:"1px solid rgba(0,255,136,0.2)",
-          padding:"14px 18px", backdropFilter:"blur(12px)",
-          boxShadow:"0 0 30px rgba(0,255,136,0.05), inset 0 0 60px rgba(0,255,136,0.02)"
-        }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{
-                color:"#00ff88", fontSize:8, letterSpacing:4, fontWeight:"bold",
-                textShadow:"0 0 8px rgba(0,255,136,0.5)"
-              }}>◆ SEISMIC OPERATIONS</div>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <div style={{
-                width:5, height:5, borderRadius:"50%", background:"#00ff88",
-                animation:"pulse 2s infinite", boxShadow:"0 0 6px #00ff88"
-              }}/>
-              <span style={{ color:"rgba(0,255,136,0.6)", fontSize:7, letterSpacing:2 }}>MONITORING</span>
-            </div>
-          </div>
-
-          <SeismicWaveform earthquakes={earthquakes} />
-
-          <div style={{ marginTop:10, display:"flex", gap:10 }}>
-            <div style={{ flex:1 }}>
-              <div style={{ color:"rgba(0,255,136,0.4)", fontSize:7, letterSpacing:2, marginBottom:6 }}>RECENT DETECTIONS</div>
-              {earthquakes.slice(0, 5).map((eq, i) => {
-                const threat = getThreatLevel(eq.magnitude);
-                return (
-                  <div key={i} style={{
-                    display:"flex", justifyContent:"space-between", alignItems:"center",
-                    padding:"4px 0", borderBottom:"1px solid rgba(0,255,136,0.08)",
-                    opacity: 1 - i * 0.15
-                  }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                      <div style={{
-                        width:4, height:4, borderRadius:"50%",
-                        background: threat.color,
-                        boxShadow: `0 0 4px ${threat.color}`,
-                        animation: threat.blink ? "pulse 0.5s infinite" : "none"
-                      }}/>
-                      <span style={{ color:"rgba(0,255,136,0.7)", fontSize:9 }}>
-                        {eq.place?.slice(0, 24) || "UNKNOWN SECTOR"}
-                      </span>
-                    </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{
-                        color: threat.color, fontSize:8, fontWeight:"bold",
-                        textShadow: `0 0 4px ${threat.color}`,
-                        letterSpacing:1
-                      }}>{threat.label}</span>
-                      <span style={{
-                        color:"#fff", fontSize:10, fontWeight:"bold",
-                        background:"rgba(0,255,136,0.1)", padding:"1px 5px",
-                        border:"1px solid rgba(0,255,136,0.2)"
-                      }}>M{eq.magnitude?.toFixed(1)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-              {earthquakes.length === 0 && (
-                <div style={{ color:"rgba(0,255,136,0.3)", fontSize:9, fontStyle:"italic" }}>
-                  ▌ Awaiting seismic intercepts...
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{
-            marginTop:10, paddingTop:8, borderTop:"1px solid rgba(0,255,136,0.1)",
-            display:"flex", justifyContent:"space-between"
-          }}>
-            <span style={{ color:"rgba(0,255,136,0.3)", fontSize:7, letterSpacing:2 }}>
-              EVENTS TRACKED: {earthquakes.length}
-            </span>
-            <span style={{ color:"rgba(0,255,136,0.3)", fontSize:7, letterSpacing:2 }}>
-              STATUS: {earthquakes.length > 0 && earthquakes[0].magnitude >= 5 ? "⚠ ELEVATED" : "NOMINAL"}
-            </span>
-          </div>
-        </div>
-
-        {/* Radar + classification - bottom right of globe */}
-        <div style={{
-          position:"absolute", bottom:24, right:344, width:160,
-          background:"rgba(0,8,2,0.85)", border:"1px solid rgba(0,255,136,0.15)",
-          padding:"10px", backdropFilter:"blur(8px)", display:"flex", flexDirection:"column", alignItems:"center"
-        }}>
-          <div style={{ color:"rgba(0,255,136,0.4)", fontSize:7, letterSpacing:3, marginBottom:6 }}>THREAT RADAR</div>
-          <RadarSweep />
-          <div style={{ marginTop:8, width:"100%" }}>
-            {[
-              { label:"CRITICAL", color:"#ff2020", count: earthquakes.filter(e => e.magnitude >= 7).length },
-              { label:"HIGH", color:"#ff6a00", count: earthquakes.filter(e => e.magnitude >= 5 && e.magnitude < 7).length },
-              { label:"MODERATE", color:"#ffcc00", count: earthquakes.filter(e => e.magnitude >= 3 && e.magnitude < 5).length },
-              { label:"LOW", color:"#00ff88", count: earthquakes.filter(e => e.magnitude < 3).length },
-            ].map(t => (
-              <div key={t.label} style={{ display:"flex", justifyContent:"space-between", padding:"2px 0" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                  <div style={{ width:6, height:3, background:t.color }}/>
-                  <span style={{ color:"rgba(255,255,255,0.4)", fontSize:7 }}>{t.label}</span>
-                </div>
-                <span style={{ color:t.color, fontSize:8, fontWeight:"bold" }}>{t.count}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div style={{ position:"absolute", top:24, right:344, textAlign:"right" }}>
@@ -614,12 +447,7 @@ export default function App() {
         </div>
       </div>
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-      `}</style>
+
     </div>
   );
 }
