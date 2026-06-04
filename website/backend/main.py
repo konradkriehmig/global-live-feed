@@ -68,7 +68,35 @@ async def trades_websocket(websocket: WebSocket):
     finally:
         consumer.close()
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.websocket("/ws/earthquakes")
+async def earthquakes_websocket(websocket: WebSocket):
+    await websocket.accept()
+    log.info("Earthquake WebSocket client connected")
+
+    consumer = Consumer({
+        "bootstrap.servers": KAFKA_BROKER,
+        "group.id": f"fastapi-eq-{id(websocket)}",
+        "auto.offset.reset": "latest",
+    })
+    consumer.subscribe(["usgs.earthquakes.raw"])
+
+    loop = asyncio.get_event_loop()
+
+    try:
+        while True:
+            msg = await loop.run_in_executor(executor, poll_kafka, consumer)
+            if msg is None:
+                await websocket.send_json({"type": "ping"})
+                continue
+            if msg.error():
+                continue
+            data = json.loads(msg.value().decode("utf-8"))
+            await websocket.send_json(data)
+    except WebSocketDisconnect:
+        log.info("Earthquake WebSocket disconnected")
+    finally:
+        consumer.close()

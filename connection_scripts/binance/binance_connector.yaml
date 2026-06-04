@@ -19,3 +19,5 @@ spec:
           env:
             - name: KAFKA_BROKER
               value: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            - name: PYTHONUNBUFFERED
+              value: "1"

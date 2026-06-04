@@ -4,3 +4,7 @@ docker buildx build --platform linux/amd64 -t acrgloballivefeed.azurecr.io/backe
 kubectl apply -f website/backend/backend.yaml
 kubectl get pods
 kubectl get svc
+
+cd website/backend
+docker buildx build --platform linux/amd64 -t acrgloballivefeed.azurecr.io/backend:latest --push .
+kubectl rollout restart deployment/backend
