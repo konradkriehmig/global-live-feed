@@ -38,7 +38,7 @@ async def trades_websocket(websocket: WebSocket):
     consumer = Consumer({
         "bootstrap.servers": KAFKA_BROKER,
         "group.id": f"fastapi-ws-{id(websocket)}",
-        "auto.offset.reset": "latest",
+        "auto.offset.reset": "earliest",
     })
     consumer.subscribe([KAFKA_TOPIC])
 
@@ -80,7 +80,7 @@ async def earthquakes_websocket(websocket: WebSocket):
     consumer = Consumer({
         "bootstrap.servers": KAFKA_BROKER,
         "group.id": f"fastapi-eq-{id(websocket)}",
-        "auto.offset.reset": "latest",
+        "auto.offset.reset": "earliest",
     })
     consumer.subscribe(["usgs.earthquakes.raw"])
 
