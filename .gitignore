@@ -2,3 +2,4 @@ delete-policies.sh
 venv/
 infra-setup.sh
 credentials.json
+infra/terraform.tfvars
