@@ -1,7 +1,3 @@
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-
 winget install Helm.Helm
 az aks get-credentials --resource-group rg-globallivefeed-prod-westeu --name aks-globallivefeed-prod-westeu
 
@@ -13,3 +9,7 @@ helm install strimzi strimzi/strimzi-kafka-operator --namespace kafka --create-n
 
 kubectl get pods --all-namespaces
 kubectl get pods --namespace kafka
+
+kubectl get crds | Select-String "strimzi"
+
+kubectl apply -f infra\kafka\kafka.yaml
