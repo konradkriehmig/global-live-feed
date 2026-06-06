@@ -2,7 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from confluent_kafka import Consumer
 import json
 import asyncio
-from main import KAFKA_BROKER, EARTHQUAKE_TOPIC, executor, poll_kafka
+from config import KAFKA_BROKER, EARTHQUAKE_TOPIC, executor, poll_kafka
 
 router = APIRouter()
 

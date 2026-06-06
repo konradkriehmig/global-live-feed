@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket
-from main import KAFKA_BROKER, THINKCENTRE_TOPIC, poll_kafka, executor
+from config import KAFKA_BROKER, THINKCENTRE_TOPIC, poll_kafka, executor
 from confluent_kafka import Consumer
 import asyncio
 import json
