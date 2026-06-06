@@ -1,29 +1,40 @@
-variable "admin_password" {
+variable "ssh_public_key" {
   type = string
 }
 
-resource "azurerm_virtual_network" "postgres" {
-  name                = "vnet-postgres-prod-westeu"
-  location            = "westeurope"
-  resource_group_name = "rg-globallivefeed-prod-westeu"
-  address_space       = ["10.1.0.0/16"]
+admin_ssh_key {
+  username   = "azureuser"
+  public_key = var.ssh_public_key
 }
 
-resource "azurerm_subnet" "postgres" {
-  name                 = "snet-postgres-prod-westeu"
-  resource_group_name  = "rg-globallivefeed-prod-westeu"
-  virtual_network_name = azurerm_virtual_network.postgres.name
-  address_prefixes     = ["10.1.0.0/24"]
+resource "azurerm_public_ip" "postgres" {
+  name                = "postgres-vm-globallivefeed-prod-westeu-ip"
+  location            = "westeurope"
+  resource_group_name = "rg-globallivefeed-prod-westeu"
+  allocation_method   = "Static"
+  sku                 = "Standard"
 }
 
 resource "azurerm_network_security_group" "postgres" {
-  name                = "nsg-postgres-prod-westeu"
+  name                = "postgres-vm-globallivefeed-prod-westeu-nsg"
   location            = "westeurope"
   resource_group_name = "rg-globallivefeed-prod-westeu"
 
   security_rule {
-    name                       = "Postgres"
+    name                       = "SSH"
     priority                   = 300
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Postgres"
+    priority                   = 310
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
@@ -34,26 +45,27 @@ resource "azurerm_network_security_group" "postgres" {
   }
 }
 
-resource "azurerm_subnet_network_security_group_association" "postgres" {
-  subnet_id                 = azurerm_subnet.postgres.id
-  network_security_group_id = azurerm_network_security_group.postgres.id
-}
-
 resource "azurerm_network_interface" "postgres" {
-  name                           = "nic-postgres-prod-westeu"
-  location                       = "westeurope"
-  resource_group_name            = "rg-globallivefeed-prod-westeu"
+  name                          = "postgres-vm-globallivefeed-prod-westeu-nic"
+  location                      = "westeurope"
+  resource_group_name           = "rg-globallivefeed-prod-westeu"
   accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.postgres.id
+    subnet_id                     = "/subscriptions/8d9e4373-f610-460e-8c58-e1dc091ba829/resourceGroups/mc_rg-globallivefeed-prod-westeu_aks-globallivefeed-prod-westeu_westeurope/providers/Microsoft.Network/virtualNetworks/aks-vnet-40127254/subnets/subnet-postgres-vm"
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.postgres.id
   }
 }
 
+resource "azurerm_network_interface_security_group_association" "postgres" {
+  network_interface_id      = azurerm_network_interface.postgres.id
+  network_security_group_id = azurerm_network_security_group.postgres.id
+}
+
 resource "azurerm_managed_disk" "postgres_data" {
-  name                 = "disk-postgres-data-prod-westeu"
+  name                 = "postgres-vm-globallivefeed-prod-westeu-datadisk"
   location             = "westeurope"
   resource_group_name  = "rg-globallivefeed-prod-westeu"
   storage_account_type = "Premium_LRS"
@@ -62,14 +74,12 @@ resource "azurerm_managed_disk" "postgres_data" {
 }
 
 resource "azurerm_linux_virtual_machine" "postgres" {
-  name                            = "vm-postgres-prod-westeu"
-  location                        = "westeurope"
-  resource_group_name             = "rg-globallivefeed-prod-westeu"
-  size                            = "Standard_D2s_v3"
-  admin_username                  = "azureuser"
-  admin_password                  = var.admin_password
-  disable_password_authentication = false
-  network_interface_ids           = [azurerm_network_interface.postgres.id]
+  name                  = "postgres-vm-globallivefeed-prod-westeu"
+  location              = "westeurope"
+  resource_group_name   = "rg-globallivefeed-prod-westeu"
+  size                  = "Standard_D2s_v3"
+  admin_username        = "azureuser"
+  network_interface_ids = [azurerm_network_interface.postgres.id]
 
   os_disk {
     caching              = "ReadWrite"
@@ -97,6 +107,6 @@ resource "azurerm_virtual_machine_data_disk_attachment" "postgres_data" {
   caching            = "ReadOnly"
 }
 
-output "postgres_private_ip" {
-  value = azurerm_network_interface.postgres.private_ip_address
+output "postgres_vm_public_ip" {
+  value = azurerm_public_ip.postgres.ip_address
 }
