@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thinkcentre-connection
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thinkcentre-connection
+  template:
+    metadata:
+      labels:
+        app: thinkcentre-connection
+    spec:
+      containers:
+        - name: thinkcentre-connection
+          image: acrgloballivefeed.azurecr.io/thinkcentre-connection:latest
+          env:
+            - name: KAFKA_BROKER
+              value: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"

@@ -1,18 +1,13 @@
-import asyncio
-import json
-import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-
-from confluent_kafka import Consumer, KafkaError
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-log = logging.getLogger(__name__)
+from routers import binance, earthquakes
 
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
-KAFKA_TOPIC = "binance.trades.raw"
+BINANCE_TOPIC = "binance.trades.raw"
+EARTHQUAKE_TOPIC =  "usgs.earthquakes.raw"
+THINKCENTRE_TOPIC = "thinkcentre.metrics.raw"
 
 app = FastAPI()
 
@@ -24,7 +19,6 @@ app.add_middleware(
 )
 
 executor = ThreadPoolExecutor(max_workers=10)
-
 
 def poll_kafka(consumer):
     return consumer.poll(timeout=0.5)
