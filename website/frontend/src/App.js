@@ -35,7 +35,7 @@ function computeMetrics(current, previous) {
   const swapFree = m["node_memory_SwapFree_bytes"] || swapTotal;
   const swapUsedPct = ((swapTotal - swapFree) / swapTotal * 100).toFixed(1);
 
-  const temp = m['node_hwmon_temp_celsius{chip="platform_coretemp_0",sensor="temp1"}'] || 0;
+  const temp = m['node_hwmon_temp_celsius{chip="platform_coretemp_0",sensor="temp2"}'] || 0;
   const load1 = (m["node_load1"] || 0).toFixed(2);
   const load5 = (m["node_load5"] || 0).toFixed(2);
   const load15 = (m["node_load15"] || 0).toFixed(2);
@@ -302,19 +302,17 @@ export default function App() {
     return () => ws.close();
   }, []);
 
-  useEffect(() => {
-    const ws = new WebSocket("ws://20.31.207.45/ws/thinkcentre");
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "ping") return;
-      setSysMetrics(() => {
-        const computed = computeMetrics(data, prevMetricsRef.current);
-        prevMetricsRef.current = data;
-        return computed;
-      });
-    };
-    return () => ws.close();
-  }, []);
+useEffect(() => {
+  const ws = new WebSocket("ws://20.31.207.45/ws/thinkcentre");
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "ping") return;
+    const computed = computeMetrics(data, prevMetricsRef.current);
+    prevMetricsRef.current = data;
+    setSysMetrics(computed);
+  };
+  return () => ws.close();
+}, []);
 
   // Calculate cumulative top offset for stacked panels
   const signalHeight = 90;

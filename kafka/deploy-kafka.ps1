@@ -13,3 +13,6 @@ kubectl get pods --namespace kafka
 kubectl get crds | Select-String "strimzi"
 
 kubectl apply -f infra\kafka\kafka.yaml
+
+#open kafka gui
+kubectl port-forward svc/kafka-ui 8080:80 --namespace kafka
