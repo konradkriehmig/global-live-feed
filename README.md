@@ -1,3 +1,4 @@
 #### Architecture
 
-<img width="1826" height="840" alt="image" src="https://github.com/user-attachments/assets/8205b301-4ebc-4449-bfe6-49ae82c6e0e0" />
+<img width="1836" height="868" alt="image" src="https://github.com/user-attachments/assets/2dd861b4-d10b-4066-abc8-9ca009d378d2" />
+
