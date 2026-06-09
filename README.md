@@ -1,5 +1,5 @@
 #### Microservices Architecture for data integration
 
-<img width="1836" height="868" alt="image" src="https://github.com/user-attachments/assets/2dd861b4-d10b-4066-abc8-9ca009d378d2" />
+<img width="2116" height="987" alt="image" src="https://github.com/user-attachments/assets/d83989cb-f178-41fd-abc2-bbe4aa7ecfc2" />
 
 *all services run in one k8s cluster, only postgres and the storage account run on dedicated nodes
