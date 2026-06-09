@@ -60,8 +60,12 @@ def parse_metrics(text):
                     result[key] = float(value)
     return result
 
-while True:
-    response = requests.get(NODE_EXPORTER_URL, timeout=10)
+while 1:
+    try:
+        response = requests.get(NODE_EXPORTER_URL, timeout=10)
+    except requests.exceptions.Timeout:
+        time.sleep(5)
+        continue
     metrics = parse_metrics(response.text)
 
     message = {

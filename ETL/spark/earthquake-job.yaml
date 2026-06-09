@@ -1,0 +1,15 @@
+apiVersion: sparkoperator.k8s.v1beta2
+kind: SparkApplication
+metadata:
+  name: earthquake-spark-transform
+  namespace: spark
+spec:
+  type: python
+  mode: cluster
+  image: acrgloballivefeed.azurecr.io/spark-jobs:latest
+  imagePullPolicy: Always
+  mainApplicationFile: local://app/earthquake_spark_transform.py
+  sparkVersion: "3.5.0"
+  driver:
+    cores: 1
+    memory:

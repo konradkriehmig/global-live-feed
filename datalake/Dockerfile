@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY binance_connection.py .
+COPY kafka-datalake-connection.py .
 
-CMD ["python", "binance_connection.py"]
+CMD ["python", "kafka-datalake-connection.py"]

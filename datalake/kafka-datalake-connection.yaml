@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datalake-connection
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datalake-connection
+  template:
+    metadata:
+      labels:
+        app: datalake-connection
+    spec:
+      containers:
+        - name: datalake-connection
+          image: acrgloballivefeed.azurecr.io/datalake-connection:latest
+          env:
+            - name: KAFKA_BROKER
+              value: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: STORAGE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: azure-storage-credentials
+                  key: azure-storage-key

@@ -3,3 +3,6 @@ venv/
 infra-setup.sh
 credentials.json
 infra/terraform.tfvars
+infra/blob-storage.tf
+kafka/kafka-connect/blob-sink-connector.sh
+datalake/iam.sh
