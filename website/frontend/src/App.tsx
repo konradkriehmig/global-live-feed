@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, CSSProperties } from "react";
 import * as THREE from "three";
 
 const SYMBOLS = [
@@ -6,14 +6,62 @@ const SYMBOLS = [
   "MATIC","UNI","ATOM","LTC","BCH","NEAR","APT","ARB","OP","INJ"
 ];
 
-function getMagColor(mag) {
+interface Trade {
+  symbol: string;
+  price: number;
+  change: number;
+  side: "buy" | "sell";
+  ts: number | string;
+  type?: string;
+}
+
+interface RawTrade extends Omit<Trade, "price" | "change"> {
+  price: string | number;
+  change?: string | number;
+}
+
+interface Earthquake {
+  place?: string;
+  magnitude?: number;
+  latitude?: number;
+  longitude?: number;
+  type?: string;
+}
+
+interface RawMetrics {
+  metrics: Record<string, number>;
+  type?: string;
+}
+
+interface ComputedMetrics {
+  memUsedPct: string;
+  swapUsedPct: string;
+  temp: number;
+  load1: string;
+  load5: string;
+  load15: string;
+  procsRunning: number;
+  procsBlocked: number;
+  cpuCores: number[];
+  rxKBs: string;
+  txKBs: string;
+  rxPkts: number;
+  txPkts: number;
+  diskReadKBs: string;
+  diskWriteKBs: string;
+  diskIoPct: string;
+  ctxPerSec: number;
+  intrPerSec: number;
+}
+
+function getMagColor(mag: number): string {
   if (mag >= 7) return "#ff2020";
   if (mag >= 5) return "#ff6a00";
   if (mag >= 3) return "#ffcc00";
   return "rgba(255,255,255,0.4)";
 }
 
-function latLngToVec3(lat, lng, r) {
+function latLngToVec3(lat: number, lng: number, r: number): THREE.Vector3 {
   const phi = (90 - lat) * Math.PI / 180;
   const theta = (lng + 180) * Math.PI / 180;
   return new THREE.Vector3(
@@ -23,7 +71,7 @@ function latLngToVec3(lat, lng, r) {
   );
 }
 
-function computeMetrics(current, previous) {
+function computeMetrics(current: RawMetrics, previous: RawMetrics | null): ComputedMetrics {
   const m = current.metrics;
   const p = previous?.metrics || {};
 
@@ -42,7 +90,7 @@ function computeMetrics(current, previous) {
   const procsRunning = m["node_procs_running"] || 0;
   const procsBlocked = m["node_procs_blocked"] || 0;
 
-  const cpuCores = [];
+  const cpuCores: number[] = [];
   for (let i = 0; i < 4; i++) {
     const idle = m[`node_cpu_seconds_total{cpu="${i}",mode="idle"}`] || 0;
     const user = m[`node_cpu_seconds_total{cpu="${i}",mode="user"}`] || 0;
@@ -54,7 +102,7 @@ function computeMetrics(current, previous) {
     const pIowait = p[`node_cpu_seconds_total{cpu="${i}",mode="iowait"}`] || iowait;
     const deltaIdle = idle - pIdle;
     const deltaTotal = (idle + user + system + iowait) - (pIdle + pUser + pSystem + pIowait);
-    const usage = deltaTotal > 0 ? ((1 - deltaIdle / deltaTotal) * 100).toFixed(1) : 0;
+    const usage = deltaTotal > 0 ? ((1 - deltaIdle / deltaTotal) * 100).toFixed(1) : "0";
     cpuCores.push(parseFloat(usage));
   }
 
@@ -91,20 +139,48 @@ function computeMetrics(current, previous) {
   };
 }
 
-function Globe({ width, height, earthquakes }) {
-  const mountRef = useRef(null);
-  const sceneRef = useRef(null);
-  const globeRef = useRef(null);
-  const ringsRef = useRef([]);
-  const markersRef = useRef([]);
+type BasicMesh<G extends THREE.BufferGeometry> = THREE.Mesh<G, THREE.MeshBasicMaterial>;
+
+interface EqMarker {
+  mesh: BasicMesh<THREE.SphereGeometry>;
+  glow: BasicMesh<THREE.SphereGeometry>;
+  phase: number;
+}
+
+interface RippleRing {
+  mesh: BasicMesh<THREE.RingGeometry>;
+  scale: number;
+  opacity: number;
+}
+
+interface PathMarker {
+  marker: BasicMesh<THREE.SphereGeometry>;
+  curve: THREE.QuadraticBezierCurve3;
+  t: number;
+}
+
+interface GlobeProps {
+  width: number;
+  height: number;
+  earthquakes: Earthquake[];
+}
+
+function Globe({ width, height, earthquakes }: GlobeProps) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const globeRef = useRef<THREE.Group | null>(null);
+  const ringsRef = useRef<RippleRing[]>([]);
+  const markersRef = useRef<EqMarker[]>([]);
   const prevEqCountRef = useRef(0);
 
   useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
     const w = width, h = height;
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(w, h);
     renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
@@ -124,7 +200,7 @@ function Globe({ width, height, earthquakes }) {
     dir.position.set(5, 3, 5);
     scene.add(dir);
 
-    const cities = [
+    const cities: [number, number][] = [
       [51.5,-0.1],[40.7,-74.0],[48.8,2.3],[35.6,139.7],
       [37.6,-122.4],[22.3,114.2],[1.3,103.8],[25.2,55.3],
       [-33.9,18.4],[55.7,37.6],[-23.5,-46.6],[28.6,77.2],
@@ -136,8 +212,8 @@ function Globe({ width, height, earthquakes }) {
       globeGroup.add(dot);
     });
 
-    const arcPairs = [[0,1],[2,3],[4,3],[5,6],[7,5],[8,0],[9,2],[10,1],[11,10]];
-    const pathMarkers = arcPairs.slice(0, 6).map(([a, b]) => {
+    const arcPairs: [number, number][] = [[0,1],[2,3],[4,3],[5,6],[7,5],[8,0],[9,2],[10,1],[11,10]];
+    const pathMarkers = arcPairs.slice(0, 6).map(([a, b]): PathMarker | null => {
       if (!cities[a] || !cities[b]) return null;
       const start = latLngToVec3(cities[a][0], cities[a][1], 1.01);
       const end = latLngToVec3(cities[b][0], cities[b][1], 1.01);
@@ -147,9 +223,9 @@ function Globe({ width, height, earthquakes }) {
       const marker = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       globeGroup.add(marker);
       return { marker, curve, t: Math.random() };
-    }).filter(Boolean);
+    }).filter((m): m is PathMarker => m !== null);
 
-    let animFrame;
+    let animFrame: number;
     const animate = () => {
       animFrame = requestAnimationFrame(animate);
       globeGroup.rotation.y += 0.001;
@@ -173,7 +249,7 @@ function Globe({ width, height, earthquakes }) {
 
     return () => {
       cancelAnimationFrame(animFrame);
-      if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
+      mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
   }, [width, height]);
@@ -197,7 +273,7 @@ function Globe({ width, height, earthquakes }) {
       markersRef.current.push({ mesh: dot, glow, phase: Math.random() * Math.PI * 2 });
       if (markersRef.current.length > 30) {
         const old = markersRef.current.shift();
-        globeGroup.remove(old.mesh); globeGroup.remove(old.glow);
+        if (old) { globeGroup.remove(old.mesh); globeGroup.remove(old.glow); }
       }
       for (let i = 0; i < 3; i++) {
         const ringSize = mag * 0.03;
@@ -212,12 +288,14 @@ function Globe({ width, height, earthquakes }) {
 }
 
 function SignalLine() {
-  const canvasRef = useRef(null);
-  const dataRef = useRef(Array.from({ length: 200 }, () => Math.random() * 30 + 20));
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dataRef = useRef<number[]>(Array.from({ length: 200 }, () => Math.random() * 30 + 20));
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    let frame;
+    if (!ctx) return;
+    let frame: number;
     const draw = () => {
       dataRef.current.push(Math.random() * 30 + 10 + Math.sin(Date.now() / 300) * 15);
       dataRef.current.shift();
@@ -239,7 +317,7 @@ function SignalLine() {
   return <canvas ref={canvasRef} width={280} height={50} style={{ width: "100%", height: "50px" }} />;
 }
 
-function MiniBar({ value }) {
+function MiniBar({ value }: { value: number }) {
   const pct = Math.min(100, Math.max(0, value));
   const color = pct > 80 ? "#ff4444" : pct > 50 ? "#ffaa00" : "#fff";
   return (
@@ -249,7 +327,7 @@ function MiniBar({ value }) {
   );
 }
 
-function Row({ label, val }) {
+function Row({ label, val }: { label: string; val: string | number }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "2px 0" }}>
       <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 8, letterSpacing: 1 }}>{label}</span>
@@ -258,7 +336,7 @@ function Row({ label, val }) {
   );
 }
 
-const fp = {
+const fp: CSSProperties = {
   position: "absolute",
   left: 24,
   background: "rgba(5,5,5,0.55)",
@@ -269,22 +347,25 @@ const fp = {
 };
 
 export default function App() {
-  const [trades, setTrades] = useState([]);
-  const [prices, setPrices] = useState({});
-  const [earthquakes, setEarthquakes] = useState([]);
-  const [sysMetrics, setSysMetrics] = useState(null);
-  const prevMetricsRef = useRef(null);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [prices, setPrices] = useState<Record<string, Trade>>({});
+  const [earthquakes, setEarthquakes] = useState<Earthquake[]>([]);
+  const [sysMetrics, setSysMetrics] = useState<ComputedMetrics | null>(null);
+  const prevMetricsRef = useRef<RawMetrics | null>(null);
   const [time, setTime] = useState(new Date());
   const mapW = window.innerWidth - 640;
   const mapH = window.innerHeight;
 
   useEffect(() => {
     const ws = new WebSocket("ws://20.31.207.45/ws/binance");
-    ws.onmessage = (event) => {
-      const trade = JSON.parse(event.data);
-      if (trade.type === "ping") return;
-      trade.price = parseFloat(trade.price);
-      trade.change = parseFloat(trade.change || 0);
+    ws.onmessage = (event: MessageEvent<string>) => {
+      const raw: RawTrade = JSON.parse(event.data);
+      if (raw.type === "ping") return;
+      const trade: Trade = {
+        ...raw,
+        price: parseFloat(String(raw.price)),
+        change: parseFloat(String(raw.change || 0)),
+      };
       setTrades(prev => [trade, ...prev].slice(0, 60));
       setPrices(prev => ({ ...prev, [trade.symbol]: trade }));
       setTime(new Date());
@@ -294,25 +375,25 @@ export default function App() {
 
   useEffect(() => {
     const ws = new WebSocket("ws://20.31.207.45/ws/earthquakes");
-    ws.onmessage = (event) => {
-      const eq = JSON.parse(event.data);
+    ws.onmessage = (event: MessageEvent<string>) => {
+      const eq: Earthquake = JSON.parse(event.data);
       if (eq.type === "ping") return;
       setEarthquakes(prev => [eq, ...prev].slice(0, 60));
     };
     return () => ws.close();
   }, []);
 
-useEffect(() => {
-  const ws = new WebSocket("ws://20.31.207.45/ws/thinkcentre");
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === "ping") return;
-    const computed = computeMetrics(data, prevMetricsRef.current);
-    prevMetricsRef.current = data;
-    setSysMetrics(computed);
-  };
-  return () => ws.close();
-}, []);
+  useEffect(() => {
+    const ws = new WebSocket("ws://20.31.207.45/ws/thinkcentre");
+    ws.onmessage = (event: MessageEvent<string>) => {
+      const data: RawMetrics = JSON.parse(event.data);
+      if (data.type === "ping") return;
+      const computed = computeMetrics(data, prevMetricsRef.current);
+      prevMetricsRef.current = data;
+      setSysMetrics(computed);
+    };
+    return () => ws.close();
+  }, []);
 
   // Calculate cumulative top offset for stacked panels
   const signalHeight = 90;
@@ -438,8 +519,8 @@ useEffect(() => {
           <div style={{ color:"rgba(255,255,255,0.25)", fontSize:8, letterSpacing:3, marginBottom:10 }}>SPOT PRICES</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
             {SYMBOLS.slice(0,12).map(sym => {
-              const p = prices[sym];
-              const isUp = p?.change > 0;
+              const p: Trade | undefined = prices[sym];
+              const isUp = (p?.change ?? 0) > 0;
               return (
                 <div key={sym} style={{ border:"1px solid rgba(255,255,255,0.06)", padding:"6px 10px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                   <span style={{ color:"rgba(255,255,255,0.4)", fontSize:9, letterSpacing:1 }}>{sym}</span>
