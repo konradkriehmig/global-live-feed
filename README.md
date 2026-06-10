@@ -1,4 +1,4 @@
-#### Microservices Architecture for data integration
+#### Microservices architecture for data integration
 
 <img width="2116" height="987" alt="image" src="https://github.com/user-attachments/assets/d83989cb-f178-41fd-abc2-bbe4aa7ecfc2" />
 
