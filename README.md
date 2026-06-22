@@ -1,6 +1,6 @@
 #### Microservices architecture for data integration
 
-<img width="1379" height="619" alt="image" src="https://github.com/user-attachments/assets/a0096e94-79f0-4958-9c44-757f4835be48" />
+<img width="1798" height="795" alt="image" src="https://github.com/user-attachments/assets/ba0acd9d-6b53-45c4-9510-a6a1160b8b9e" />
 
 *all services run in one k8s cluster, only the storage account lies on a dedicated node
 
