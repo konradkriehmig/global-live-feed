@@ -29,5 +29,6 @@ Spark internal Mechanism:
 Tested JSON to parquet transform with DuckDb on 1 core (aborted), 6 cores (aborted), and 12 cores (completed after 316.1s). Monolith VM running DuckDB is already in same DC with storage account and therefore network optimized. Disk spillage was disabled for these three runs. After transform, 15GB of parquet remained.
 
 Sidemark: Network traffic and speed of memory utilization behaved differently under different core utilization (explanations welcomed):
-<img width="1732" height="342" alt="image" src="https://github.com/user-attachments/assets/b69efdff-37f9-4777-b7ac-fe4e93a58c95" />
+<img width="1722" height="332" alt="image" src="https://github.com/user-attachments/assets/26ad6d28-f85f-473e-896b-c6d9938c0d5f" />
+
 
