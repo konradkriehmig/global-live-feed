@@ -21,7 +21,7 @@ Spark internal Mechanism:
 <img width="1289" height="638" alt="image" src="https://github.com/user-attachments/assets/702a8cc8-909e-429e-aee7-bd272183cfa5" />
 
 
-#### Data processing with DuckDB and Spark
+#### Data processing with DuckDB and Spark (monolithic vs distributed approach):
 
 1. Generated 180GB of notional prometheus-style machine metrics using random walk
 2. Transform tests with DuckDB to make a case for distributed data processing with Spark
