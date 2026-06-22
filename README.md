@@ -18,7 +18,8 @@ Workflow:
 <img width="1674" height="799" alt="image" src="https://github.com/user-attachments/assets/bdaaca6c-1c6f-4daa-9008-097d20f30da5" />
 
 Spark internal Mechanism:
-<img width="1091" height="623" alt="image" src="https://github.com/user-attachments/assets/6cfd060f-f229-4177-bc13-149631456ce7" />
+<img width="1289" height="638" alt="image" src="https://github.com/user-attachments/assets/702a8cc8-909e-429e-aee7-bd272183cfa5" />
+
 
 #### Data processing with DuckDB and Spark
 
