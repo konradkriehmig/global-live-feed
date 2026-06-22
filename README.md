@@ -2,7 +2,7 @@
 
 <img width="1798" height="795" alt="image" src="https://github.com/user-attachments/assets/ba0acd9d-6b53-45c4-9510-a6a1160b8b9e" />
 
-*all services run in one k8s cluster, only the storage account lies on a dedicated node
+*all services run in one k8s cluster, only the storage accounts lie on a dedicated node
 
 ## Spark Setup
 
