@@ -4,14 +4,6 @@
 
 *all services run in one k8s cluster, only the storage account lies on a dedicated node
 
-#### Simplified architecture for better understanding (reduced to one data source)
-
-<img width="2030" height="1021" alt="image" src="https://github.com/user-attachments/assets/ad35851e-3358-47e4-8781-8d3afdfb8db3" />
-
-#### Further Simplification, only for Spark setup
-
-<img width="636" height="332" alt="image" src="https://github.com/user-attachments/assets/821ba220-f5ff-455a-9ecb-5531f75ff219" />
-
 #### Spark Setup
 
 Workflow:
