@@ -10,7 +10,7 @@
 
 #### Further Simplification, only for Spark setup
 
-<img width="853" height="483" alt="image" src="https://github.com/user-attachments/assets/beef6697-1857-4d35-acb5-b2d9b5d0f2c6" />
+<img width="636" height="332" alt="image" src="https://github.com/user-attachments/assets/821ba220-f5ff-455a-9ecb-5531f75ff219" />
 
 #### Data processing with DuckDB and Spark
 
