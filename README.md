@@ -10,7 +10,7 @@ Workflow:
 <img width="1674" height="799" alt="image" src="https://github.com/user-attachments/assets/bdaaca6c-1c6f-4daa-9008-097d20f30da5" />
 
 Spark internal Mechanism:
-<img width="1289" height="638" alt="image" src="https://github.com/user-attachments/assets/702a8cc8-909e-429e-aee7-bd272183cfa5" />
+<img width="1737" height="846" alt="image" src="https://github.com/user-attachments/assets/83a8494c-c3d0-4f0f-8118-7c625e50cfd1" />
 
 ## Data processing with DuckDB and Spark (monolithic vs distributed approach):
 (Generated 180GB of notional prometheus-style machine metrics as testing data using random walk)
