@@ -23,3 +23,5 @@ Sidemark: Network traffic and speed of memory utilization behaved differently un
 <img width="1722" height="332" alt="image" src="https://github.com/user-attachments/assets/26ad6d28-f85f-473e-896b-c6d9938c0d5f" />
 
 
+#### 2. Spark
+Setting up Spark standalone took several days to configure and get it running. I ended up aborting the experiment since the setup was too time consuming and difficult to maintain and did not justify a potential improvement of the acceptable processing time of DuckDB.
